@@ -1,0 +1,22 @@
+# coding: utf-8
+class hello_world:
+  def __init__(self, bot):
+    # handler for the bot class (so the plugin can send messages)
+    self.bot = bot
+
+    # functions that users are allowed to call and their authentication level (in this case 1)
+    self.allowed_functions = { 'echo':1, 'help':1 }
+
+    # this is a function that will be run on every received message.
+    # def function1(self, auth_level, buffer)
+    # self.autorun = self.function1
+
+  # this function can be called with hello_world.echo to the bot.
+  def echo(self, buffer):
+    # repeat message back to user
+    self.bot.msg(buffer.to, ' '.join(buffer.msg.split()[1:]))
+
+  # the help function, this is required by all plugins
+  def help(self, buffer):
+    self.bot.msg(buffer.to, "Usage: ")
+    self.bot.msg(buffer.to, " * hello_world.echo <message>")
