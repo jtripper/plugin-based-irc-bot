@@ -6,7 +6,7 @@ This is an IRC bot that uses plugins for everything. Plugins can be reloaded, un
 
 To configure, open main.py and set the necessary settings at the beginning of the file. 
 
-```
+```python
 # irc network, port, nickname, username, real name, and ssl on
 bot = IRC("irc.com", 6697, "Dat_Bot", "testing", "testing", use_ssl=1)
 # set bot to +B
