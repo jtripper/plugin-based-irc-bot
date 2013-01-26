@@ -59,6 +59,11 @@ class Message: # the Message class, this stores all the message information
       self.chan   = None
       self.to     = self.sender
 
+    elif self.type == "401":
+      self.sender = buffer[2]
+      self.chan   = None
+      self.to     = buffer[3]
+
     else:
       self.chan  = None
       self.to    = self.sender
@@ -178,6 +183,9 @@ class IRC:
           self.verify[buffer[3]] = -1
       except:
         self.verify[buffer[3]] = -1
+      return Message(buffer)
+
+    elif length > 1 and buffer[1] == "401":
       return Message(buffer)
         
     elif length > 2 and (buffer[1] == "PRIVMSG" or buffer[1] == "NOTICE" or buffer[1] == "JOIN" or buffer[1] == "PART" or buffer[1] == "QUIT" or buffer[1] == "NICK" or buffer[1] == "KICK"):

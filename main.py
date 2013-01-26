@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 # coding: utf-8
 
 import os
@@ -9,14 +9,15 @@ from pluginDriver import pluginDriver
 from irc import IRC
 from auth import auth
 
-bot = IRC("irc.com", 6697, "lol", "lol", "lol", use_ssl=1)
-bot.raw("MODE lol +B")
-bot.join("#bot")
+bot = IRC("irc.com", 6697, "Dat_Bot", "testing", "testing", use_ssl=1)
+bot.raw("MODE Dat_Bot +B")
+bot.join("#test1")
 
 driver = pluginDriver()
 driver.load_plugins("plugins", bot)
 
-authentication = auth()
+authentication = auth(bot)
+authentication.auth_levels[''] = 10
 
 while bot.connected == 1:
   buffer = bot.receive()
