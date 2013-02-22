@@ -97,7 +97,7 @@ class auth:
         return (buff, 0)
 
       elif buff.sender.lower() == "nickserv" and re.match("STATUS [^ ]+ [0-9]+", buff.msg):
-        buff.sender = re.search("STATUS ([^ ]+) 3", buff.msg).group(1)
+        buff.sender = re.search("STATUS ([^ ]+) [0-9]+", buff.msg).group(1)
         bot.verify[buff.sender.lower()] = -1
         buff = self.auth(bot, buff)
         return (buff, 0)        

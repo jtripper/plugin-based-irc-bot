@@ -70,7 +70,7 @@ class pluginDriver:
         else:
           bot.msg(buffer.to, "%s not set." % (args[1]))
 
-      else:
+      elif len(args) == 3:
         auth.auth_levels[args[1].lower()] = int(args[2])
         bot.msg(buffer.to, "Set %s to level %s." % (args[1], args[2]))
         pickle.dump(auth.auth_levels, open("data/auth.p", "w"))
