@@ -25,16 +25,17 @@ sys.path += ("irc", )
 from pluginDriver import pluginDriver
 from irc import IRC
 from auth import auth
+from config import *
 
-bot = IRC("irc.com", 6697, "Dat_Bot", "testing", "testing", use_ssl=1)
-bot.raw("MODE Dat_Bot +B")
-bot.join("#test1")
+bot = IRC(hostname, port, nickname, username, realname, use_ssl=ssl, use_proxy=proxy, proxy_host=proxy_host, proxy_port=proxy_port)
+bot.raw("MODE %s +B" % nickname)
+bot.join(channel)
 
 driver = pluginDriver()
 driver.load_plugins("plugins", bot)
 
 authentication = auth(bot)
-authentication.auth_levels[''] = 10
+authentication.auth_levels[bot_master.lower()] = 10
 
 while bot.connected == 1:
   buffer = bot.receive()

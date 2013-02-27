@@ -127,7 +127,7 @@ class IRC:
     self.sock.send("%s\n" % buffer)
 
   def disconnect(self): # quit
-    self.sock.send("QUIT :I ask for rich guy stuff and you give me shiny pebbles?! I bid you, adieu!\n")
+    self.sock.send("QUIT :https://github.com/jtRIPper/plugin-based-irc-bot\n")
     self.connected = 0
  
   def join(self, chan): # join a channel

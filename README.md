@@ -4,29 +4,13 @@ This is an IRC bot that uses plugins for everything. Plugins can be reloaded, un
 
 ## Configuration
 
-To configure, open main.py and set the necessary settings at the beginning of the file. 
-
-```python
-# irc network, port, nickname, username, real name, and ssl on
-bot = IRC("irc.com", 6697, "Dat_Bot", "testing", "testing", use_ssl=1)
-# set bot to +B
-bot.raw("MODE Dat_Bot +B")
-# channel
-bot.join("#test1")
-
-....
-
-authentication = auth(bot)
-# change this to your nick
-authentication.auth_levels[''] = 10
-
-```
+To configure, open config.py and edit the necessary settings. 
 
 After this is configured, the bot can be started.
 
 ## Usage
 
-Note that the bot does not have to be registered, but the bot master does. The bot requires that all users bet registered and logged in. If necessary, this could be changed.
+Note that the bot does not have to be registered, but the bot master does. The bot requires that all users be registered and logged in. If necessary, this could be changed. However, if no nickserv exists, there is no authentication other than nickname.
 
 General usage for the plugins is:
 

@@ -110,7 +110,7 @@ class pluginDriver:
       return
 
     if command[1] not in self.plugins[command[0]].allowed_functions:
-      self.plugins[command[0]].help(None)
+      self.plugins[command[0]].help(buffer)
       return
 
     if self.plugins[command[0]].allowed_functions[command[1]] <= auth_level:

@@ -79,6 +79,15 @@ class auth:
       return None
 
   def check(self, bot, buff):
+    if self.services == -1:
+      if buff == None:
+        return (None, 0)
+
+      if self.auth_levels.has_key(buff.sender.lower()):
+        return (buff, self.auth_levels[buff.sender.lower()])
+      else:
+        return (buff, 0)
+
     if (buff.type == "330" or buff.type == "318") and self.services == 1:
       if self.pending_command.has_key(buff.sender.lower()):
 
@@ -129,5 +138,9 @@ class auth:
           return (buff, self.auth_levels[buff.sender.lower()])
         else:
           return (buff, 0)
+
+    elif buff.type == "PART" or buff.type == "KICK" or buff.type == "QUIT" or buff.type == "NICK":
+      if bot.verify.has_key(buff.sender.lower()):
+        bot.verify.pop(buff.sender.lower())
 
     return (None, None)
