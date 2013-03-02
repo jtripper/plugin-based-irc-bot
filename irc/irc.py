@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-import socket, socks, re, time
+import socket, re, time, struct
 
 class Message: # the Message class, this stores all the message information
   def __init__(self, buffer):
@@ -101,22 +101,30 @@ class IRC:
     self.connect()
 
   def connect(self): # connect() to the ircd
-    if self.use_proxy == 1 and self.use_ssl == 1:
-      print "Error: Cannot use both ssl and a proxy!"
-      exit()
-
     if self.use_proxy == 1:
-      self.sock = socks.socksocket()
-      self.sock.setproxy(socks.PROXY_TYPE_SOCKS5, self.proxy_host, self.proxy_port)
+      port   = struct.pack("!H", self.port)
+      length = chr(len(self.hostname))
+
+      self.sock = socket.socket()
+      self.sock.connect((self.proxy_host, int(self.proxy_port)))
+      self.sock.send("\x05\x01\x00")
+
+      if self.sock.recv(2) != "\x05\x00":
+        return -1
+
+      self.sock.send("\x05\x01\x00\x03%s%s%s" % (length, self.hostname, port)) 
+
+      if self.sock.recv(1024) != "\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00":
+        return -1
+
     else:
       self.sock = socket.socket()
+      self.sock.connect((self.hostname, self.port))
 
     if self.use_ssl == 1:
       import ssl
       self.sock = ssl.wrap_socket(self.sock)
  
-    self.sock.connect((self.hostname, self.port))
-
     self.nick(self.nickname)
     self.sock.send("USER %s %s %s :%s\n" % (self.user, self.user, self.user, self.real))
 
@@ -145,7 +153,6 @@ class IRC:
       for lin in re.findall(".?"*350, line):
         if lin != None and len(lin) > 0:
           self.sock.send(("PRIVMSG %s :%s\n" % (to, lin)).encode('utf-8'))
-          time.sleep(1)
 
   def notice(self, to, buffer): # send a notice
     lines = buffer.split('\n')

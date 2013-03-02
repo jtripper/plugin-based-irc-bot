@@ -80,6 +80,16 @@ class pluginDriver:
     if args[0] == "plugin.unload":
       self.unload_plugin(buffer, args[1], bot)
 
+    elif args[0] == "plugin.list":
+      bot.msg(buffer.to, "Loaded modules:")
+      for module in self.modules:
+        bot.msg(buffer.to, " * %s" % module)
+
+    elif args[0] == "auth.levels":
+      bot.msg(buffer.to, "Auth levels:")
+      for level in auth.auth_levels:
+        bot.msg(buffer.to, " * %s -- %d" % (level, auth.auth_levels[level]))
+
     elif args[0] == "auth.level":
       if len(args) == 2:
         if auth.auth_levels.has_key(args[1].lower()):
