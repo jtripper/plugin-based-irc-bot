@@ -28,28 +28,29 @@ class pluginDriver:
     if module in self.modules:
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run.pop(module)
-      sys.modules.pop(module)
       self.plugins.pop(module)
+      sys.modules.pop(module)
+      self.modules.remove(module)
       bot.msg(buffer.to, "Unloaded: %s." % module)
 
     else:
       bot.msg(buffer.to, "Module not loaded.")
 
   def load_plugin(self, buffer, module, bot):
-    #sys.path += (os.getcwd() + "/" + self.directory, )
-
     if module not in self.modules:
-      self.modules += ( module, )
+      self.modules.append(module)
       self.plugins[module] = __import__(module).__dict__[module](bot)
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run[module] = self.plugins[module].__dict__["autorun"]
 
     else:
+      self.modules.remove(module)
       sys.modules.pop(module)
       self.plugins[module] = __import__(module).__dict__[module](bot)
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run.pop(module)
         self.auto_run[module] = self.plugins[module].__dict__["autorun"]
+      self.modules.append(module)
 
     bot.msg(buffer.to, "Loaded: " + module)
 
@@ -57,10 +58,10 @@ class pluginDriver:
     self.directory = directory
 
     sys.path += (os.getcwd() + "/" + directory, )
-    self.modules = ()
+    self.modules = []
     for plugin in os.listdir(directory):
       if re.search(".py$", plugin):
-        self.modules += ( plugin.rstrip(".py"), )
+        self.modules.append(re.sub("\.py$", "", plugin))
 
     self.plugins = {}
     self.auto_run = {}
@@ -77,7 +78,7 @@ class pluginDriver:
     if args[0] == "plugin.load":
       self.load_plugin(buffer, args[1], bot)
 
-    if args[0] == "plugin.unload":
+    elif args[0] == "plugin.unload":
       self.unload_plugin(buffer, args[1], bot)
 
     elif args[0] == "plugin.list":
