@@ -66,7 +66,6 @@ class auth:
         return buff
 
     except:
-      print "WHOISING JTRIPPER"
       bot.raw("whois %s\n" % buff.sender)
       self.pending_command[buff.sender.lower()] = copy.deepcopy(buff)
       return None
