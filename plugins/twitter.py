@@ -78,8 +78,8 @@ class twitter:
     tweet      = ' '.join(buffer.msg.split()[2:])
 
     (author, tweet_id) = re.search("https?://w?w?w?\.?twitter.com/([^/]+)/statuse?s?/([^ ]+)", url).groups()
-    if user not in tweet:
-      tweet = user + ' ' + tweet
+    if author not in tweet:
+      tweet = '@' + author + ' ' + tweet
     tweet = self.api.update_status(tweet, tweet_id)
     self.bot.msg(buffer.to, "Tweet URL: https://twitter.com/%s/status/%s" % (tweet.author.screen_name, tweet.id))
 
