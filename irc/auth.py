@@ -23,9 +23,9 @@ import re
 class auth:
   def __init__(self, bot):
     self.pending_command = {}
-    self.services = 2
+    self.services = 0 
 
-    bot.msg("nickserv", "status %s" % bot.nickname)
+    bot.msg("nickserv", "help")
 
     while 1:
       buffer = bot.receive()
@@ -35,17 +35,13 @@ class auth:
         if not buffer:
           continue
 
-        if buff.type == "NOTICE" and buff.sender.lower() == "nickserv":
-          if re.match("STATUS %s [0-9]+" % bot.nickname, buff.msg):
-            self.services = 0
-          else:
-            self.services = 1
-          break
+        if buff.sender.lower() == "nickserv":
+          self.services = 1
 
         if buff.type == "401":
           self.services = -1
           break
-      if self.services != 2:
+      if self.services != 0:
         break
     try:
       os.stat("data")
@@ -70,11 +66,7 @@ class auth:
         return buff
 
     except:
-      if self.services == 1:
-        bot.raw("whois %s\n" % buff.sender)
-      else:
-        bot.msg("nickserv", "status %s\n" % buff.sender)
-
+      bot.raw("whois %s\n" % buff.sender)
       self.pending_command[buff.sender.lower()] = copy.deepcopy(buff)
       return None
 
@@ -88,7 +80,7 @@ class auth:
       else:
         return (buff, 0)
 
-    if (buff.type == "330" or buff.type == "318") and self.services == 1:
+    if buff.type == "330" or buff.type == "318" or buff.type == "307":
       if self.pending_command.has_key(buff.sender.lower()):
 
         if self.pending_command[buff.sender.lower()] is not None:
@@ -102,31 +94,6 @@ class auth:
           else:
             return (buff, 0)
       return (buff, 0)
-
-    elif buff.type == "NOTICE" and self.services == 0:
-      if buff.sender.lower() == "nickserv" and re.match("STATUS [^ ]+ 3", buff.msg):
-        buff.sender = re.search("STATUS ([^ ]+) 3", buff.msg).group(1)
-        bot.verify[buff.sender.lower()] = 1
-
-        if self.pending_command.has_key(buff.sender.lower()):
-
-          if self.pending_command[buff.sender.lower()] is not None:
-            buff = self.auth(bot, buff)
-
-            if buff == None:
-              return (None, 0)
-
-            if self.auth_levels.has_key(buff.sender.lower()):
-              return (buff, self.auth_levels[buff.sender.lower()])
-            else:
-              return (buff, 0)
-        return (buff, 0)
-
-      elif buff.sender.lower() == "nickserv" and re.match("STATUS [^ ]+ [0-9]+", buff.msg):
-        buff.sender = re.search("STATUS ([^ ]+) [0-9]+", buff.msg).group(1)
-        bot.verify[buff.sender.lower()] = -1
-        buff = self.auth(bot, buff)
-        return (buff, 0)        
 
     elif buff.type == "PRIVMSG":
       if not bot.verify.has_key(buff.sender.lower()):

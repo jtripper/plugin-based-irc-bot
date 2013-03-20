@@ -54,7 +54,7 @@ class Message: # the Message class, this stores all the message information
       self.to   = self.sender
       self.msg  = ' '.join(buffer[2:])[1:].rstrip()
 
-    elif self.type == "330" or self.type == "318":
+    elif self.type == "330" or self.type == "318" or self.type == "307":
       self.sender = buffer[3]
       self.chan   = None
       self.to     = self.sender
@@ -176,20 +176,27 @@ class IRC:
     if length > 0 and buffer[0] == "PING":
       self.ping(buffer)
 
-    elif length > 1 and buffer[1] == "376":
+    elif length > 1 and (buffer[1] == "376" or "/MOTD" in ' '.join(buffer)):
       self.connected = 1
 
     elif length > 1 and buffer[1] == "330":
       if "is logged in as" in ' '.join(buffer):
-        self.verify[buffer[3]] = 1
+        self.verify[buffer[3].lower()] = 1
+      return Message(buffer)
+
+    elif length > 1 and buffer[1] == "307":
+      if "is identified for this nick" in ' '.join(buffer):
+        self.verify[buffer[3].lower()] = 1
+      if "is a registered nick" in ' '.join(buffer):
+        self.verify[buffer[3].lower()] = 1
       return Message(buffer)
 
     elif length > 1 and buffer[1] == "318":
       try:
-        if self.verify[buffer[3]] != 1:
-          self.verify[buffer[3]] = -1
+        if self.verify[buffer[3].lower()] != 1:
+          self.verify[buffer[3].lower()] = -1
       except:
-        self.verify[buffer[3]] = -1
+        self.verify[buffer[3].lower()] = -1
       return Message(buffer)
 
     elif length > 1 and buffer[1] == "401":
