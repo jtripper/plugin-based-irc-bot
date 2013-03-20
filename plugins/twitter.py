@@ -18,18 +18,14 @@
 import tweepy
 import re
 import HTMLParser
+import config
 
 class twitter:
   def __init__(self, bot):
     self.allowed_functions = { 'tweet':1, 'follow':2, 'reply':1, 'retweet':1, 'delete':2, 'help':1 }
 
-    consumer_key = ""
-    consumer_secret = ""
-    access_token = ""
-    access_token_secret = ""
-
-    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
+    auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
+    auth.set_access_token(config.access_token, config.access_token_secret)
     self.api = tweepy.API(auth)
     self.bot = bot
 

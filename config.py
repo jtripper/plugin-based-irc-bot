@@ -19,3 +19,10 @@ channel    = "#bots"
 
 # initial username that will have 10
 bot_master = ""
+
+# twitter keys if using the twitter plugin
+consumer_key        = ""
+consumer_secret     = ""
+access_token        = ""
+access_token_secret = ""
+
