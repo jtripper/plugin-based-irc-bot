@@ -131,6 +131,14 @@ class IRC:
     while self.connected != 1:
       self.receive()
 
+  def reconnect(self):
+    self.connected = 0
+    self.connect()
+    chans = self.chan
+    self.chan = []
+    for chan in chans:
+      self.join(chan)
+
   def raw(self, buffer): # send a raw message
     self.sock.send("%s\n" % buffer)
 
@@ -145,7 +153,6 @@ class IRC:
   def part(self, chan): # join a channel
     self.sock.send("PART %s\n" % chan)
     self.chan.remove(chan)
-
 
   def msg(self, to, buffer): # send a message
     lines = buffer.split('\n')
@@ -202,14 +209,19 @@ class IRC:
     elif length > 1 and buffer[1] == "401":
       return Message(buffer)
         
-    elif length > 2 and (buffer[1] == "PRIVMSG" or buffer[1] == "NOTICE" or buffer[1] == "JOIN" or buffer[1] == "PART" or buffer[1] == "QUIT" or buffer[1] == "NICK" or buffer[1] == "KICK"):
+    elif length > 2 and (buffer[1] == "PRIVMSG" or buffer[1] == "NOTICE" 
+        or buffer[1] == "JOIN" or buffer[1] == "PART" or buffer[1] == "QUIT" 
+        or buffer[1] == "NICK" or buffer[1] == "KICK"):
       return Message(buffer)
+
+    elif buffer[0:3] == [ "ERROR", ":Closing", "Link:" ]:
+      self.reconnect()
 
     return None
 
   def receive(self): # receive a message
     buffer = self.sock.recv(1024)
-    print buffer.rstrip()
+    if buffer != "": print buffer.rstrip()
 
     if len(buffer.split('\n')) > 1:
       rets = ()
