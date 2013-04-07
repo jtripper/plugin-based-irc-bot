@@ -44,7 +44,7 @@ Another important variable is self.autorun. This is a function that is executed 
 
 Every class should also have a help() function that lists the command usage, this is automatically executed upon errors. 
 
-The __init__ function should accept the IRC class as an argument and save this as self.bot. Every other function should accept an instance of the Message class. 
+The __init__ function should accept the IRC class as an argument. Every other function should accept an instance of the Message class. 
 
 ### IRC()
 
