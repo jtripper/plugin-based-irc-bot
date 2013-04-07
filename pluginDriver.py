@@ -39,14 +39,14 @@ class pluginDriver:
   def load_plugin(self, buffer, module, bot):
     if module not in self.modules:
       self.modules.append(module)
-      self.plugins[module] = __import__(module).__dict__[module](bot)
+      self.plugins[module] = __import__(module).__dict__[module]()
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run[module] = self.plugins[module].__dict__["autorun"]
 
     else:
       self.modules.remove(module)
       sys.modules.pop(module)
-      self.plugins[module] = __import__(module).__dict__[module](bot)
+      self.plugins[module] = __import__(module).__dict__[module]()
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run.pop(module)
         self.auto_run[module] = self.plugins[module].__dict__["autorun"]
@@ -54,7 +54,7 @@ class pluginDriver:
 
     bot.msg(buffer.to, "Loaded: " + module)
 
-  def load_plugins(self, directory, bot):
+  def load_plugins(self, directory):
     self.directory = directory
 
     sys.path += (os.getcwd() + "/" + directory, )
@@ -67,11 +67,11 @@ class pluginDriver:
     self.auto_run = {}
 
     for module in self.modules:
-      self.plugins[module] = __import__(module).__dict__[module](bot)
+      self.plugins[module] = __import__(module).__dict__[module]()
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run[module] = self.plugins[module].__dict__["autorun"]
 
-  def meta_commands(self, buffer, auth_level, auth, args, command, bot):
+  def meta_commands(self, buffer, auth_level, args, command, bot):
     if auth_level != 10:
       return
 
@@ -88,27 +88,27 @@ class pluginDriver:
 
     elif args[0] == "auth.levels":
       bot.msg(buffer.to, "Auth levels:")
-      for level in auth.auth_levels:
-        bot.msg(buffer.to, " * %s -- %d" % (level, auth.auth_levels[level]))
+      for level in bot.auth.auth_levels:
+        bot.msg(buffer.to, " * %s -- %d" % (level, bot.auth.auth_levels[level]))
 
     elif args[0] == "auth.level":
       if len(args) == 2:
-        if auth.auth_levels.has_key(args[1].lower()):
-          bot.msg(buffer.to, "%s is level %s." % (args[1], auth.auth_levels[args[1].lower()]))
+        if bot.auth.auth_levels.has_key(args[1].lower()):
+          bot.msg(buffer.to, "%s is level %s." % (args[1], bot.auth.auth_levels[args[1].lower()]))
         else:
           bot.msg(buffer.to, "%s not set." % (args[1]))
 
       elif len(args) == 3:
-        auth.auth_levels[args[1].lower()] = int(args[2])
+        bot.auth.auth_levels[args[1].lower()] = int(args[2])
         bot.msg(buffer.to, "Set %s to level %s." % (args[1], args[2]))
-        pickle.dump(auth.auth_levels, open("data/auth.p", "w"))
+        pickle.dump(bot.auth.auth_levels, open("data/auth_%s.p" % bot.hostname, "w"))
 
-  def run_command(self, buffer, auth_level, auth, bot):
+  def run_command(self, bot, buffer, auth_level, sock):
     if not buffer.msg:
       return
 
     for module in self.auto_run:
-      self.auto_run[module](auth_level, buffer)
+      self.auto_run[module](bot, sock, auth_level, buffer)
 
     args = buffer.msg.split()
     command = args[0].split(".")
@@ -117,14 +117,14 @@ class pluginDriver:
       return
 
     if command[0] not in self.plugins:
-      self.meta_commands(buffer, auth_level, auth, args, command, bot)
+      self.meta_commands(buffer, auth_level, args, command, sock)
       return
 
     if command[1] not in self.plugins[command[0]].allowed_functions:
-      self.plugins[command[0]].help(buffer)
+      self.plugins[command[0]].help(bot, sock, buffer)
       return
 
     if self.plugins[command[0]].allowed_functions[command[1]] <= auth_level:
-      getattr(self.plugins[command[0]], command[1])(buffer)
+      getattr(self.plugins[command[0]], command[1])(bot, sock, buffer)
 
     return

@@ -28,7 +28,8 @@ class auth:
     bot.msg("nickserv", "help")
 
     while 1:
-      buffer = bot.receive()
+      buffer = bot.sock.recv(1024)
+      buffer = bot.receive(buffer)
       if not buffer:
         continue
       for buff in buffer:
@@ -49,10 +50,10 @@ class auth:
       os.mkdir("data", 0700)
 
     try:
-      self.auth_levels = pickle.load(open("data/auth.p", "r"))
+      self.auth_levels = pickle.load(open("data/auth_%s.p" % bot.hostname, "r"))
     except:
       self.auth_levels = { }
-      pickle.dump(self.auth_levels, open("data/auth.p", "w"))
+      pickle.dump(self.auth_levels, open("data/auth_%s.p" % bot.hostname, "w"))
 
   def auth(self, bot, buff):
     try:

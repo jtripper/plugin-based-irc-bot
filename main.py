@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # encoding: utf-8
 
 # main.py
@@ -25,36 +25,39 @@ sys.path += ("irc", )
 from pluginDriver import pluginDriver
 from irc import IRC
 from auth import auth
-from config import *
+import config
 
-bot = IRC(hostname, port, nickname, username, realname, use_ssl=ssl, use_proxy=proxy, proxy_host=proxy_host, proxy_port=proxy_port)
-bot.raw("MODE %s +B" % nickname)
-bot.join(channel)
+def init():
+  bot = IRC()
+  bot.connect(config.hostname, config.port, config.nickname, config.username, config.realname, 
+    config.channel, use_ssl=config.ssl, use_proxy=config.proxy, proxy_host=config.proxy_host, proxy_port=config.proxy_port)
 
-driver = pluginDriver()
-driver.load_plugins("plugins", bot)
+  driver = pluginDriver()
+  driver.load_plugins("plugins")
 
-authentication = auth(bot)
-authentication.auth_levels[bot_master.lower()] = 10
+  return bot, driver
 
-while bot.connected == 1:
-  buffer = bot.receive()
-  if not buffer:
-    continue
+bot, driver = init()
+
+while bot.socks != []:
+  data = bot.receive()
+  if not data: continue
+
+  sock, buffer = data
 
   for buf in buffer:
     if not buf:
       continue
 
-    (tmp, auth_level) = authentication.check(bot, buf)
+    (tmp, auth_level) = sock.check(buf)
     if not tmp:
       continue
 
     try:
-      ret = driver.run_command(tmp, auth_level, authentication, bot)
+      ret = driver.run_command(bot, tmp, auth_level, sock)
       if not ret:
         continue
-      bot.msg(buf.to, ret)
+      sock.msg(buf.to, ret)
 
     except Exception as e:
       exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -62,3 +65,5 @@ while bot.connected == 1:
         print str(err)
       print str(type(e))
       print str(e)
+
+

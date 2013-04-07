@@ -15,7 +15,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-import socket, re, time, struct
+import socket
+import re
+import time
+import struct
+import tor
+import ssl
+import select
+import config
+import auth
 
 class Message: # the Message class, this stores all the message information
   def __init__(self, buffer):
@@ -77,67 +85,21 @@ class Message: # the Message class, this stores all the message information
       except:
         self.msg = ""
 
-class IRC:
-  def __init__(self, hostname, port, nick, user, real, use_proxy=0, proxy_host=None, proxy_port=None, use_ssl=0):
-    self.hostname   = hostname
-    self.port       = int(port)
-
+class _IRC:
+  def __init__(self, sock, hostname, nick, user, real, chan):
     self.nickname   = nick
     self.user       = user
     self.real       = real
-
-    self.use_proxy  = use_proxy
-    self.proxy_host = proxy_host
-
-    if proxy_port != None:
-      self.proxy_port = int(proxy_port)
-
-    self.use_ssl    = use_ssl
+    self.hostname   = hostname
+    self.sock       = sock
+    self.auth       = None
 
     self.verify = {}
     self.connected  = 0
-    self.chan = []
+    self.chan = [ chan ]
 
-    self.connect()
-
-  def connect(self): # connect() to the ircd
-    if self.use_proxy == 1:
-      port   = struct.pack("!H", self.port)
-      length = chr(len(self.hostname))
-
-      self.sock = socket.socket()
-      self.sock.connect((self.proxy_host, int(self.proxy_port)))
-      self.sock.send("\x05\x01\x00")
-
-      if self.sock.recv(2) != "\x05\x00":
-        return -1
-
-      self.sock.send("\x05\x01\x00\x03%s%s%s" % (length, self.hostname, port)) 
-
-      if self.sock.recv(1024) != "\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00":
-        return -1
-
-    else:
-      self.sock = socket.socket()
-      self.sock.connect((self.hostname, self.port))
-
-    if self.use_ssl == 1:
-      import ssl
-      self.sock = ssl.wrap_socket(self.sock)
- 
     self.nick(self.nickname)
     self.sock.send("USER %s %s %s :%s\n" % (self.user, self.user, self.user, self.real))
-
-    while self.connected != 1:
-      self.receive()
-
-  def reconnect(self):
-    self.connected = 0
-    self.connect()
-    chans = self.chan
-    self.chan = []
-    for chan in chans:
-      self.join(chan)
 
   def raw(self, buffer): # send a raw message
     self.sock.send("%s\n" % buffer)
@@ -145,6 +107,10 @@ class IRC:
   def disconnect(self): # quit
     self.sock.send("QUIT :https://github.com/jtRIPper/plugin-based-irc-bot\n")
     self.connected = 0
+
+  def _join(self):
+    for chan in self.chan:
+      self.sock.send("JOIN %s\n" % chan)
  
   def join(self, chan): # join a channel
     self.sock.send("JOIN %s\n" % chan)
@@ -185,6 +151,9 @@ class IRC:
 
     elif length > 1 and (buffer[1] == "376" or "/MOTD" in ' '.join(buffer)):
       self.connected = 1
+      self._join()
+      self.auth = auth.auth(self)
+      self.auth.auth_levels[config.bot_master.lower()] = 10
 
     elif length > 1 and buffer[1] == "330":
       if "is logged in as" in ' '.join(buffer):
@@ -214,14 +183,10 @@ class IRC:
         or buffer[1] == "NICK" or buffer[1] == "KICK"):
       return Message(buffer)
 
-    elif buffer[0:3] == [ "ERROR", ":Closing", "Link:" ]:
-      self.reconnect()
-
     return None
 
-  def receive(self): # receive a message
-    buffer = self.sock.recv(1024)
-    if buffer != "": print buffer.rstrip()
+  def receive(self, buffer): # receive a message
+    print buffer.rstrip()
 
     if len(buffer.split('\n')) > 1:
       rets = ()
@@ -237,6 +202,56 @@ class IRC:
     else:
       return (self.parse(buffer), )
 
+  def check(self, buffer):
+    return self.auth.check(self, buffer)
+
   def ping(self, buffer): # reply to a ping
     self.sock.send(re.sub("PING", "PONG", ' '.join(buffer)) + "\n")
 
+  def recv(self, size):
+    return self.sock.recv(size)
+
+  def fileno(self):
+    return self.sock.fileno()
+
+class IRC:
+  def __init__(self):
+    self.socks = []
+    self.ircs  = {}
+
+  def connect(self, hostname, port, nick, user, real, chan, use_proxy=0, proxy_host=None, proxy_port=None, use_ssl=0):
+    if use_proxy:
+      s = tor.AsyncSocksSocket(tor_host=proxy_host, tor_port=proxy_port, use_ssl=use_ssl)
+      s.connect((hostname, port))
+      self.ircs[s] = [hostname, nick, user, real, chan]
+      self.socks.append(s)
+    else:
+      s = socket.socket()
+      s.connect((hostname, port))
+      if use_ssl:
+        s = ssl.wrap_socket(s)
+      self.socks.append(_IRC(s, hostname, nick, user, real, chan))
+
+  def receive(self):
+    readable, writable, exceptional = select.select(self.socks, [], [])
+
+    for s in readable:
+      try:
+        data = s.recv(1024)
+      except socket.error:
+        self.socks.remove(s)
+        continue
+
+      if data == "" or not data:
+        self.socks.remove(s)
+        continue
+
+      if isinstance(s, tor.AsyncSocksSocket) and s.connected:
+        self.socks.remove(s)
+        self.socks.append(_IRC(s, self.ircs[s][0], self.ircs[s][1], self.ircs[s][2], self.ircs[s][3], self.ircs[s][4]))
+
+      elif isinstance(s, _IRC) and not s.connected:
+        s.receive(data)
+
+      elif isinstance(s, _IRC):
+        return [s, s.receive(data)]
