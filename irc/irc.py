@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # irc.py
 # (C) 2012 jtRIPper
 # 
@@ -125,7 +126,7 @@ class _IRC:
     for line in lines:
       for lin in re.findall(".?"*350, line):
         if lin != None and len(lin) > 0:
-          self.sock.send(("PRIVMSG %s :%s\n" % (to, lin)).encode('utf-8'))
+          self.sock.send(("PRIVMSG %s :%s\n" % (to, lin)))
 
   def notice(self, to, buffer): # send a notice
     lines = buffer.split('\n')
