@@ -57,7 +57,7 @@ class control:
   def quit(self, bot, sock, buffer):
     sock.disconnect()
 
-  def help(self, bot, buffer):
+  def help(self, bot, sock, buffer):
     sock.msg(buffer.to, "Usage:")
     sock.msg(buffer.to, "  * control.nick <nickname>")
     sock.msg(buffer.to, "  * control.join <channel>")
