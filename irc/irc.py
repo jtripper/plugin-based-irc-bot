@@ -126,7 +126,7 @@ class _IRC:
     for line in lines:
       for lin in re.findall(".?"*350, line):
         if lin != None and len(lin) > 0:
-          self.sock.send(("PRIVMSG %s :%s\n" % (to, lin)))
+          self.sock.send(("PRIVMSG %s :%s\n" % (to, lin)).encode('utf-8'))
 
   def notice(self, to, buffer): # send a notice
     lines = buffer.split('\n')
@@ -241,11 +241,13 @@ class IRC:
     for s in readable:
       try:
         data = s.recv(1024)
-      except socket.error:
+      except socket.error as e:
+        print("[!] Socket error, removing %s: %s" % (s, e))
         self.socks.remove(s)
         continue
 
       if data == "" or not data:
+        print("[!] No data received, removing %s" % s)
         self.socks.remove(s)
         continue
 

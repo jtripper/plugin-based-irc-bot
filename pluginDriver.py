@@ -71,33 +71,12 @@ class pluginDriver:
       if self.plugins[module].__dict__.has_key("autorun"):
         self.auto_run[module] = self.plugins[module].__dict__["autorun"]
 
-  def reload_plugin(self, buffer, module, bot):
-    if module not in self.modules:
-      self.modules.append(module)
-      self.plugins[module] = __import__(module).__dict__[module]()
-      if self.plugins[module].__dict__.has_key("autorun"):
-        self.auto_run[module] = self.plugins[module].__dict__["autorun"]
-
-    else:
-      self.modules.remove(module)
-      sys.modules.pop(module)
-      self.plugins[module] = __import__(module).__dict__[module]()
-      if self.plugins[module].__dict__.has_key("autorun"):
-        self.auto_run.pop(module)
-        self.auto_run[module] = self.plugins[module].__dict__["autorun"]
-      self.modules.append(module)
-
-    bot.msg(buffer.to, "Reloaded: " + module)
-
   def meta_commands(self, buffer, auth_level, args, command, bot):
     if auth_level != 10:
       return
 
-    if args[0] == "plugin.load":
+    if args[0] == "plugin.load" or args[0] == "plugin.reload":
       self.load_plugin(buffer, args[1], bot)
-
-    if args[0] == "plugin.reload":
-      self.reload_plugin(buffer, args[1], bot)
 
     elif args[0] == "plugin.unload":
       self.unload_plugin(buffer, args[1], bot)
