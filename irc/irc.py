@@ -150,7 +150,7 @@ class _IRC:
     if length > 0 and buffer[0] == "PING":
       self.ping(buffer)
 
-    elif length > 1 and (buffer[1] == "376" or "/MOTD" in ' '.join(buffer)):
+    elif length > 1 and (buffer[1] == "376" or buffer[1] == "422"):
       self.connected = 1
       self._join()
       self.auth = auth.auth(self)
