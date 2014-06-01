@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 # irc.py
 # (C) 2012 jtRIPper
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 1, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -112,7 +112,7 @@ class _IRC:
   def _join(self):
     for chan in self.chan:
       self.sock.send("JOIN %s\n" % chan)
- 
+
   def join(self, chan): # join a channel
     self.sock.send("JOIN %s\n" % chan)
     self.chan.append(chan)
@@ -178,16 +178,16 @@ class _IRC:
 
     elif length > 1 and buffer[1] == "401":
       return Message(buffer)
-        
-    elif length > 2 and (buffer[1] == "PRIVMSG" or buffer[1] == "NOTICE" 
-        or buffer[1] == "JOIN" or buffer[1] == "PART" or buffer[1] == "QUIT" 
+
+    elif length > 2 and (buffer[1] == "PRIVMSG" or buffer[1] == "NOTICE"
+        or buffer[1] == "JOIN" or buffer[1] == "PART" or buffer[1] == "QUIT"
         or buffer[1] == "NICK" or buffer[1] == "KICK"):
       return Message(buffer)
 
     return None
 
   def receive(self, buffer): # receive a message
-    print buffer.rstrip()
+    print(buffer.rstrip())
 
     if len(buffer.split('\n')) > 1:
       rets = ()
@@ -220,6 +220,8 @@ class IRC:
     self.socks = []
     self.ircs  = {}
 
+    self.buffers = {}
+
   def connect(self, hostname, port, nick, user, real, chan, use_proxy=0, proxy_host=None, proxy_port=None, use_ssl=0):
     if use_proxy:
       s = tor.AsyncSocksSocket(tor_host=proxy_host, tor_port=proxy_port, use_ssl=use_ssl)
@@ -233,7 +235,7 @@ class IRC:
         s = ssl.wrap_socket(s)
       self.socks.append(_IRC(s, hostname, nick, user, real, chan))
 
-  def receive(self):
+  def _receive(self):
     readable, writable, exceptional = select.select(self.socks, [], [])
 
     for s in readable:
@@ -245,6 +247,20 @@ class IRC:
 
       if data == "" or not data:
         self.socks.remove(s)
+        continue
+
+      if s not in self.buffers:
+        self.buffers[s] = data
+      else:
+        self.buffers[s] += data
+
+      buff = self.buffers[s].split("\r\n")
+      self.buffers[s] = buff[-1]
+      yield s, "\r\n".join(buff[:-1])
+
+  def receive(self):
+    for s, data in self._receive():
+      if not data:
         continue
 
       if isinstance(s, tor.AsyncSocksSocket) and s.connected:
