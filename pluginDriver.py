@@ -19,75 +19,69 @@ import sys
 import os
 import re
 import pickle
+import importlib
 
 class pluginDriver:
   def __init__(self):
-    pass
-
-  def unload_plugin(self, buffer, module, bot):
-    if module in self.modules:
-      if self.plugins[module].__dict__.has_key("autorun"):
-        self.auto_run.pop(module)
-      self.plugins.pop(module)
-      sys.modules.pop(module)
-      self.modules.remove(module)
-      bot.msg(buffer.to, "Unloaded: %s." % module)
-
-    else:
-      bot.msg(buffer.to, "Module not loaded.")
-
-  def load_plugin(self, buffer, module, bot):
-    if os.path.isfile("plugins/%s.py" % (module)):
-      if module not in self.modules:
-        self.modules.append(module)
-        self.plugins[module] = __import__(module).__dict__[module]()
-        if self.plugins[module].__dict__.has_key("autorun"):
-          self.auto_run[module] = self.plugins[module].__dict__["autorun"]
-
-      else:
-        self.modules.remove(module)
-        sys.modules.pop(module)
-        self.plugins[module] = __import__(module).__dict__[module]()
-        if self.plugins[module].__dict__.has_key("autorun"):
-          self.auto_run.pop(module)
-          self.auto_run[module] = self.plugins[module].__dict__["autorun"]
-        self.modules.append(module)
-
-      bot.msg(buffer.to, "Loaded: " + module)
-    else:
-      bot.msg(buffer.to, "Plugin does not exist.")
-
-  def load_plugins(self, directory):
-    self.directory = directory
-
-    sys.path += (os.getcwd() + "/" + directory, )
-    self.modules = []
-    for plugin in os.listdir(directory):
-      if re.search(".py$", plugin):
-        self.modules.append(re.sub("\.py$", "", plugin))
-
     self.plugins = {}
     self.auto_run = {}
 
-    for module in self.modules:
-      self.plugins[module] = __import__(module).__dict__[module]()
-      if self.plugins[module].__dict__.has_key("autorun"):
-        self.auto_run[module] = self.plugins[module].__dict__["autorun"]
+  def unload_plugin(self, plugin_name):
+    if plugin_name in self.plugins:
+      if plugin_name in self.auto_run:
+        self.auto_run.pop(plugin_name)
+
+      del sys.modules['plugins.' + plugin_name]
+      del self.plugins[plugin_name]
+
+      if bot:
+        bot.msg(buffer.to, "Unloaded: %s." % plugin)
+    else:
+      if bot:
+        bot.msg(buffer.to, "Module not loaded.")
+
+  def load_plugin(self, plugin_name, bot=None, buffer=None):
+    if plugin_name == '__init__':
+      return
+
+    if os.path.isfile("plugins/%s.py" % (plugin_name)):
+      if plugin_name in self.plugins:
+        self.unload_plugin(plugin_name)
+
+      plugin = importlib.import_module('plugins.' + plugin_name)
+      plugin = getattr(plugin, plugin_name)()
+
+      self.plugins[plugin_name] = plugin
+      if hasattr(plugin, "autorun"):
+        self.auto_run[plugin_name] = getattr(plugin, "autorun")
+
+      if bot:
+        bot.msg(buffer.to, "Loaded: " + plugin_name)
+    else:
+      if bot:
+        bot.msg(buffer.to, "Plugin does not exist.")
+
+  def load_plugins(self):
+    for plugin in os.listdir('plugins'):
+      if not re.search(".py$", plugin):
+        continue
+
+      self.load_plugin(re.sub("\.py$", "", plugin))
 
   def meta_commands(self, buffer, auth_level, args, command, bot):
     if auth_level != 10:
       return
 
     if args[0] == "plugin.load" or args[0] == "plugin.reload":
-      self.load_plugin(buffer, args[1], bot)
+      self.load_plugin(args[1], bot, buffer)
 
     elif args[0] == "plugin.unload":
-      self.unload_plugin(buffer, args[1], bot)
+      self.unload_plugin(args[1], bot, buffer)
 
     elif args[0] == "plugin.list":
-      bot.msg(buffer.to, "Loaded modules:")
-      for module in self.modules:
-        bot.msg(buffer.to, " * %s" % module)
+      bot.msg(buffer.to, "Loaded plugins:")
+      for plugin in self.plugins:
+        bot.msg(buffer.to, " * %s" % plugin)
 
     elif args[0] == "auth.levels":
       bot.msg(buffer.to, "Auth levels:")
@@ -110,8 +104,8 @@ class pluginDriver:
     if not buffer.msg:
       return
 
-    for module in self.auto_run:
-      self.auto_run[module](bot, sock, auth_level, buffer)
+    for plugin in self.auto_run:
+      self.auto_run[plugin](bot, sock, auth_level, buffer)
 
     args = buffer.msg.split()
     command = args[0].split(".")

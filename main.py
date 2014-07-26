@@ -33,7 +33,7 @@ def init():
     config.channel, use_ssl=config.ssl, use_proxy=config.proxy, proxy_host=config.proxy_host, proxy_port=config.proxy_port)
 
   driver = pluginDriver()
-  driver.load_plugins("plugins")
+  driver.load_plugins()
 
   return bot, driver
 
