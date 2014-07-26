@@ -26,7 +26,7 @@ class pluginDriver:
     self.plugins = {}
     self.auto_run = {}
 
-  def unload_plugin(self, plugin_name):
+  def unload_plugin(self, plugin_name, bot=None, buffer=None):
     if plugin_name in self.plugins:
       if plugin_name in self.auto_run:
         self.auto_run.pop(plugin_name)
