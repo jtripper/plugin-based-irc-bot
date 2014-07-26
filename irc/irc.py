@@ -96,7 +96,8 @@ class _IRC:
     self.auth       = None
 
     self.verify = {}
-    self.connected  = 0
+    self.connected = 0
+    self.reconnect = True
     self.chan = [ chan ]
 
     self.nick(self.nickname)

@@ -44,9 +44,10 @@ driver = init(bot)
 while bot.socks != []:
   for sock, buffer in bot.receive():
     if not buffer:
-      driver.unload_plugins()
-      time.sleep(2)
-      driver = init(bot)
+      if sock.reconnect:
+        driver.unload_plugins()
+        time.sleep(2)
+        driver = init(bot)
       continue
 
     for buf in buffer:

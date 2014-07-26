@@ -56,6 +56,7 @@ class control:
 
   def quit(self, bot, sock, buffer):
     sock.disconnect()
+    sock.reconnect = False
 
   def help(self, bot, sock, buffer):
     sock.msg(buffer.to, "Usage:")
