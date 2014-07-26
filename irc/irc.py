@@ -244,11 +244,13 @@ class IRC:
       except socket.error as e:
         print("[!] Socket error, removing %s: %s" % (s, e))
         self.socks.remove(s)
+        yield s, None
         continue
 
       if data == "" or not data:
         print("[!] No data received, removing %s" % s)
         self.socks.remove(s)
+        yield s, None
         continue
 
       if s not in self.buffers:
@@ -263,6 +265,7 @@ class IRC:
   def receive(self):
     for s, data in self._receive():
       if not data:
+        yield s, data
         continue
 
       if isinstance(s, tor.AsyncSocksSocket) and s.connected:
@@ -273,4 +276,4 @@ class IRC:
         s.receive(data)
 
       elif isinstance(s, _IRC):
-        return [s, s.receive(data)]
+        yield s, s.receive(data)

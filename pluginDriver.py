@@ -31,6 +31,9 @@ class pluginDriver:
       if plugin_name in self.auto_run:
         self.auto_run.pop(plugin_name)
 
+      if hasattr(self.plugins[plugin_name], 'unload'):
+        self.plugins[plugin_name].unload()
+
       del sys.modules['plugins.' + plugin_name]
       del self.plugins[plugin_name]
 
@@ -67,6 +70,11 @@ class pluginDriver:
         continue
 
       self.load_plugin(re.sub("\.py$", "", plugin))
+
+  def unload_plugins(self):
+    plugins = [ plugin for plugin in self.plugins ]
+    for plugin in plugins:
+      self.unload_plugin(plugin)
 
   def meta_commands(self, buffer, auth_level, args, command, bot):
     if auth_level != 10:

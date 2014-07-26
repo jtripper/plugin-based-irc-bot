@@ -26,44 +26,48 @@ from pluginDriver import pluginDriver
 from irc import IRC
 from auth import auth
 import config
+import time
 
-def init():
-  bot = IRC()
-  bot.connect(config.hostname, config.port, config.nickname, config.username, config.realname, 
-    config.channel, use_ssl=config.ssl, use_proxy=config.proxy, proxy_host=config.proxy_host, proxy_port=config.proxy_port)
+def init(bot):
+  bot.connect(config.hostname, config.port, config.nickname, config.username,
+    config.realname, config.channel, use_ssl=config.ssl, use_proxy=config.proxy,
+    proxy_host=config.proxy_host, proxy_port=config.proxy_port)
 
   driver = pluginDriver()
   driver.load_plugins()
 
-  return bot, driver
+  return driver
 
-bot, driver = init()
+bot = IRC()
+driver = init(bot)
 
 while bot.socks != []:
-  data = bot.receive()
-  if not data: continue
-
-  sock, buffer = data
-
-  for buf in buffer:
-    if not buf:
+  for sock, buffer in bot.receive():
+    if not buffer:
+      driver.unload_plugins()
+      time.sleep(2)
+      driver = init(bot)
       continue
 
-    (tmp, auth_level) = sock.check(buf)
-    if not tmp:
-      continue
-
-    try:
-      ret = driver.run_command(bot, tmp, auth_level, sock)
-      if not ret:
+    for buf in buffer:
+      if not buf:
         continue
-      sock.msg(buf.to, ret)
 
-    except Exception as e:
-      exc_type, exc_value, exc_traceback = sys.exc_info()
-      for err in traceback.extract_tb(exc_traceback, limit=10):
-        print str(err)
-      print str(type(e))
-      print str(e)
+      (tmp, auth_level) = sock.check(buf)
+      if not tmp:
+        continue
+
+      try:
+        ret = driver.run_command(bot, tmp, auth_level, sock)
+        if not ret:
+          continue
+        sock.msg(buf.to, ret)
+
+      except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        for err in traceback.extract_tb(exc_traceback, limit=10):
+          print(err)
+        print(type(e))
+        print(e)
 
 
