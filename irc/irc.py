@@ -254,6 +254,12 @@ class IRC:
         yield s, None
         continue
 
+      if isinstance(s, tor.AsyncSocksSocket):
+        if s.connected:
+          yield s, True
+        else:
+          continue
+
       if s not in self.buffers:
         self.buffers[s] = data
       else:
