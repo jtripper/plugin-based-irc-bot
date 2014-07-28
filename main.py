@@ -44,7 +44,7 @@ driver = init(bot)
 while bot.socks != []:
   for sock, buffer in bot.receive():
     if not buffer:
-      if sock.reconnect:
+      if not hasattr(sock, 'reconnect') or sock.reconnect:
         driver.unload_plugins()
         time.sleep(2)
         driver = init(bot)
